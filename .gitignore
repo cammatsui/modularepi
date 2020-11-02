@@ -1,0 +1,15 @@
+# Files
+._.DS_Store
+.DS_Store
+todo.txt
+
+# Folders
+.vscode/
+modular_epi/__pycache__/
+modular_epi/consortium/
+modular_epi/main_SEIR.py
+modular_epi/main_SIR.py
+modular_epi/main.py
+
+# File extensions
+*.pyc

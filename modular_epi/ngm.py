@@ -1,35 +1,32 @@
-"""
-Module to create a next generation matrix for a model to calculate R0.
+"""Module to create a next generation matrix for a model to calculate
+   R0.
 """
 
 import numpy as np
 
 class NGM:
-    """
-    Defines the Next Generation Matrix (NGM) for a given 
-    CompartmentalModel. Used to calculate R0.
+    """Defines the Next Generation Matrix (NGM) for a given
+       CompartmentalModel. Used to calculate R0.
     """
 
     def __init__(self, model):
-        """
-        Constructor for NGM.
+        """Constructor for NGM.
 
-        Parameters:
+        Args:
             model (CompartmentalModel): a model to construct the NGM for
         """
         self.model = model
         self.compartments = self._get_ngm_compartments()
         self.matrix_indices = {n: c for n, c in enumerate(self.compartments)}
-        self.matrix_name_to_index = {c.name: n for n, 
+        self.matrix_name_to_index = {c.name: n for n,
             c in enumerate(self.compartments)}
-    
+
     def _get_ngm_compartments(self):
-        """
-        Get model compartments used in the NGM.
+        """Get model compartments used in the NGM.
 
         Returns:
-            ngm_compts (list): a list of the DiseaseCompartments to be 
-                used in this NGM.
+            list: a list of the DiseaseCompartments to be used in this
+                NGM.
         """
         ngm_compts = set()
         compt_names = set()
@@ -40,18 +37,17 @@ class NGM:
         compt_names = sorted(list(compt_names))
         ngm_compts = [self.model.get_compartment(c) for c in compt_names]
         return ngm_compts
-        
-    def _get_transitions_at_infection_on(self, compt):
-        """
-        Get a list of Transitions to compartments at infection on
-            the DiseaseCompartment compt for this model.
 
-        Parameters:
+    def _get_transitions_at_infection_on(self, compt):
+        """Get a list of Transitions to compartments at infection on
+           the DiseaseCompartment compt for this model.
+
+        Args:
             compt (DiseaseCompartment): the compartment of interest.
-        
+
         Returns:
-            transitions_at_infection (list): a list of Transitions that 
-                give compartments at infection on compt.
+            list: a list of Transitions that give compartments at
+                infection on compt.
         """
         transitions_at_infection = []
         for transition_at_infection in \
@@ -61,17 +57,15 @@ class NGM:
         return transitions_at_infection
 
     def _get_transmissions_on(self, compt):
-        """
-        Get a list of Transmission that infect this compt, where
-            compt is a SusceptibleCompartment.
+        """Get a list of Transmission that infect this compt, where
+           compt is a SusceptibleCompartment.
 
-        Parameters:
-            compt (SusceptibleCompartment): the SusceptibleCompartment 
+        Args:
+            compt (SusceptibleCompartment): the SusceptibleCompartment
                 of interest.
-        
+
         Returns:
-            compts (list): a list of Transmissions that infect
-                compt.
+            list: a list of Transmissions that infect compt.
         """
         compts = []
         for transmission in self.model.transmissions:
@@ -80,18 +74,17 @@ class NGM:
         return compts
 
     def _get_transmission_entry(self, infected, infecting):
-        """
-        Get a transmission matrix entry for an infected compartment and
-            infecting compartment.
+        """Get a transmission matrix entry for an infected compartment and
+           infecting compartment.
 
-        Parameters:
+        Args:
             infected (DiseaseCompartment): the ith compartment in matrix,
                 infected by infecting.
-            infecting (DiseaseCompartment): the jth compartment in 
+            infecting (DiseaseCompartment): the jth compartment in
                 matrix.
-        
+
         Returns:
-            entry (float): the transmission matrix entry.
+            float: the transmission matrix entry.
         """
         entry = 0
         transitions_at_infection_on = self.\
@@ -119,13 +112,13 @@ class NGM:
         return entry
 
     def construct_transmission_matrix(self):
-        """
-        Create transmission matrix (T) to create the NGM
-            with large domain K_L.
+        """Create transmission matrix (T) to create the NGM
+           with large domain K_L.
+
         Returns:
-            transmission (np.array): the transmission matrix.
+            np.array: the transmission matrix.
         """
-        transmission = np.zeros((len(self.compartments), 
+        transmission = np.zeros((len(self.compartments),
                                  len(self.compartments)))
         # compt_1 is infected by compt_2.
         for compt_1 in self.compartments:
@@ -137,17 +130,17 @@ class NGM:
         return transmission
 
     def _get_between_compartment(self, origin_compt, trans_compt):
-        """
-        Get Transition that transition to trans_compt from origin_compt.
+        """Get Transition that transition to trans_compt from
+           origin_compt.
 
-        Parameters:
-            origin_compt (DiseaseCompartment): the compartment to get 
+        Args:
+            origin_compt (DiseaseCompartment): the compartment to get
                 the Transition coming from.
             out_compt (DiseaseCompartment): the compartment to get the
                 Transition going to.
 
         Returns:
-            compt (None or OutCompartment): the OutCompartment between
+            None or OutCompartment: the OutCompartment between
                 origin_compt and out_compt
         """
         for out_compt in self.model.transitions:
@@ -157,12 +150,11 @@ class NGM:
         return None
 
     def construct_transition_matrix(self):
-        """
-        Create transition matrix (sigma) to create the NGM
-            with large domain K_L.
-        
+        """Create transition matrix (sigma) to create the NGM
+           with large domain K_L.
+
         Returns:
-            transition (np.array): the transition matrix.
+            np.array: the transition matrix.
         """
         transition = np.zeros((len(self.compartments), len(self.compartments)))
         # Fill out main diagonal.
@@ -179,16 +171,15 @@ class NGM:
                 if btwn_compt is not None:
                     compt_1_i = self.matrix_name_to_index[compt_1.name]
                     compt_2_i = self.matrix_name_to_index[compt_2.name]
-                    transition[compt_2_i, 
+                    transition[compt_2_i,
                                compt_1_i] = btwn_compt.parameter.value
         return transition
 
     def construct_matrix(self):
-        """
-        Construct the NGM with large domain for this model.
+        """Construct the NGM with large domain for this model.
 
         Returns:
-            ngm (np.array): the Next Generation Matrix
+            np.array: the Next Generation Matrix.
         """
         T = self.construct_transmission_matrix()
         sigma = self.construct_transition_matrix()
@@ -196,11 +187,11 @@ class NGM:
         return kl
 
     def R0(self):
-        """
-        Calculate R0 from the NGM with large domain K_L for this model.
+        """Calculate R0 from the NGM with large domain K_L for this
+           model
 
         Returns:
-            R0 (float)
+            float: R0 for this model
         """
         ngm = self.construct_matrix()
         R0 = np.max(np.linalg.eig(ngm)[0])

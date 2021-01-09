@@ -91,7 +91,8 @@ class NGM:
             _get_transitions_at_infection_on(infected)
         if not transitions_at_infection_on: return entry
         # Get proportion parameters.
-        ps = [c.parameter.value for c in transitions_at_infection_on]
+        ps = [c.parameter.get_initial_value() for c in 
+              transitions_at_infection_on]
         # Get susceptible compartments that feed into infected.
         transitions_at_infection_on_names = [c.name.split()[0] for c in
             transitions_at_infection_on]
@@ -106,7 +107,7 @@ class NGM:
             # Add FOI contribution to entry.
             for transmission_on in transmissions_on:
                 if transmission_on.name.split()[-1] == infecting.name:
-                    entry += (transmission_on.parameter.value
+                    entry += (transmission_on.parameter.get_initial_value()
                         * (S_n / transmission_on.N) * p)
 
         return entry
@@ -160,9 +161,9 @@ class NGM:
         # Fill out main diagonal.
         for i in range(len(self.compartments)):
             cur_compt = self.matrix_indices[i]
-            entry = cur_compt.self_parameter.value
+            entry = cur_compt.self_parameter.get_initial_value()
             for transition_link in cur_compt.transitions:
-                entry += transition_link.parameter.value
+                entry += transition_link.parameter.get_initial_value()
             transition[i, i] = -entry
         # Fill out rest of matrix.
         for compt_1 in self.compartments:
@@ -171,8 +172,8 @@ class NGM:
                 if btwn_compt is not None:
                     compt_1_i = self.matrix_name_to_index[compt_1.name]
                     compt_2_i = self.matrix_name_to_index[compt_2.name]
-                    transition[compt_2_i,
-                               compt_1_i] = btwn_compt.parameter.value
+                    transition[compt_2_i, compt_1_i] \
+                        = btwn_compt.parameter.get_initial_value()
         return transition
 
     def construct_matrix(self):

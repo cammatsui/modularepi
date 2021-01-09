@@ -17,7 +17,7 @@ class TestModel(unittest.TestCase):
     
     def setUp(self):
         # Create compartment, OO SEIR model for testing
-        self.test_meta = False
+        self.test_meta = True
 
         # Simulation parameters for all models
         self.length = 100
@@ -84,7 +84,7 @@ class TestModel(unittest.TestCase):
             seir_m.add_disease_compartment("Recovered")
             # Add transitions
             seir_m.add_transmission("Susceptible", "Infectious", [self.pop],
-                                    ("beta", self.beta_), np.array([1, 1]))
+                                    ("beta", self.beta_ * np.ones(1)), np.array([1, 1]))
             seir_m.add_transition_at_infection("Susceptible", "Exposed")
             seir_m.add_transition("Exposed", "Infectious", ("sigma", [self.sigma_]))
             seir_m.add_transition("Infectious", "Recovered", 

@@ -56,7 +56,6 @@ class TestMetapopulationModel(unittest.TestCase):
         self.assertEqual(parsed, [("", 0.5), ("", 0.5), ("", 0.5)])
     
     def test_parse_params_wronglength(self):
-        print(self.model.compartments)
         with self.assertRaises(ValueError):
             self.model._parse_params(("Test", [0, 1]), 0)
         
@@ -79,9 +78,9 @@ class TestMetapopulationModel(unittest.TestCase):
         model_transition_names = [str(transition) for transition in 
             self.model.transitions]
         for i in range(3):
-            transitions.append(f"Exposed_{i} - Sigma_{i} -> Infectious_{i}")
-            transitions.append(f"Infectious_{i} - Gamma_{i} -> Recovered_{i}")
-        self.assertEqual(transitions, model_transition_names)
+            transitions.append(f"Exposed_{i} -> Infectious_{i}")
+            transitions.append(f"Infectious_{i} -> Recovered_{i}")
+        self.assertEqual(transitions.sort(), model_transition_names.sort())
 
             
         

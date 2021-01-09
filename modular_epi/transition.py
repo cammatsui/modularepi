@@ -23,6 +23,15 @@ class Parameter:
         """
         return '{}: {}'.format(self.name, self.value)
 
+    def get_initial_value(self):
+        """Return an initial value of the Parameter for the NGM.
+        
+        Returns:
+            float: parameter value on iteration 0
+        """
+        if isinstance(self.value, np.ndarray): return self.value[0]
+        return self.value
+
 class Transition:
     """Defines a compartment and a rate to exit to that compartment, to
        be used in the compartment that transitions to this

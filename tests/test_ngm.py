@@ -205,7 +205,6 @@ class TestNGM(unittest.TestCase):
         R0 = self.ngm_hurr_seir.R0()
         true_R0 = self.hurr_seir_R0
         self.assertAlmostEqual(R0, true_R0)
-        print(R0, true_R0)
         
 if __name__ == '__main__':
     unittest.main()

@@ -247,5 +247,4 @@ class MetapopulationModel(CompartmentalModel):
                 compartment names.
         """
         if agg: return self.get_metrics('cumulative')
-        # TODO: check that this is right
         return super().get_incidence()

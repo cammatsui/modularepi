@@ -27,6 +27,7 @@ class CompartmentalModel:
         self.compartments = {n: c for n, c in zip(compt_names, compts_list)}
         self.simulation_length = length
         self.intervals_per_day = iters
+        self.total_time = length * iters
         self.t = 1
         self.transitions = []
         self.transitions_at_infection = []
@@ -63,12 +64,13 @@ class CompartmentalModel:
             self_param (tuple): the self parameter for this compartment
                 of form (name, value)
         """
+        self_parameter = self._build_parameter(self_param)
         if name in self.compartments.keys():
             raise Warning(f"Compartment with name {name} already exists"
                           " in this model.")
         compt = DiseaseCompartment(name, init_val=init_val,
             length=self.simulation_length, iters=self.intervals_per_day,
-            self_param=Parameter(self_param[0], self_param[1]))
+            self_param=self_parameter)
         self.compartments[name] = compt
 
     def add_susceptible_compartment(self, name, init_val, N,
@@ -85,12 +87,13 @@ class CompartmentalModel:
             self_param (tuple): the self parameter for this compartment
                 of form (name, value)
         """
+        self_parameter = self._build_parameter(self_param)
         if name in self.compartments.keys():
             raise ValueError(f"Compartment with name {name} already"
                              " exists in this model.")
         compt = SusceptibleCompartment(name, N, init_val=init_val,
             length=self.simulation_length, iters=self.intervals_per_day,
-            self_param=Parameter(self_param[0], self_param[1]))
+            self_param=self_parameter)
         self.compartments[name] = compt
 
     def add_transmission(self, infected_compt_name, infectious_compt_name, N,
@@ -108,14 +111,14 @@ class CompartmentalModel:
             transmission_param (tuple): a parameter for the transmission
                 rate between compartments of the form (name, value).
         """
+        transmission_parameter = self._build_parameter(transmission_param)
         if not isinstance(self.compartments[infected_compt_name],
                           SusceptibleCompartment):
             raise ValueError("Infected compartment must be of type"
                              " SusceptibleCompartment")
-        param = Parameter(transmission_param[0], transmission_param[1])
         new_transmission = self.compartments[infected_compt_name]\
             .add_transmission(self.compartments[infectious_compt_name], N,
-            param)
+            transmission_parameter)
         self.transmissions.append(new_transmission)
 
     def add_transition(self, origin_compt_name, out_compt_name,
@@ -132,14 +135,14 @@ class CompartmentalModel:
                 transition between compartments of the form
                 (name, value).
         """
+        transition_parameter = self._build_parameter(transition_param)
         for transition in self.compartments[origin_compt_name].transitions:
             if transition.name.split()[-1] == out_compt_name:
                 raise Warning("There is already a transition between"
                               f" {origin_compt_name} and"
                               f" {out_compt_name}")
-        param = Parameter(transition_param[0], transition_param[1])
         new_transition = self.compartments[origin_compt_name].add_transition(
-            self.compartments[out_compt_name], param)
+            self.compartments[out_compt_name], transition_parameter)
         self.transitions.append(new_transition)
 
     def add_transition_at_infection(self, susceptible_compt_name,
@@ -158,15 +161,66 @@ class CompartmentalModel:
                 of individuals that transition to the exposed
                 compartment of the form (name, value).
         """
+        proportion_parameter = self._build_parameter(proportion_param)
         if not isinstance(self.compartments[susceptible_compt_name],
                           SusceptibleCompartment):
             raise ValueError("Infected compartment must be of type"
                              " SusceptibleCompartment.")
-        param = Parameter(proportion_param[0], proportion_param[1])
         new_transition_at_infection = self.compartments[susceptible_compt_name]\
             .add_transition_at_infection(self.compartments[exposed_compt_name],
-            param)
+            proportion_parameter)
         self.transitions_at_infection.append(new_transition_at_infection)
+
+    def _build_parameter(self, param_tuple):
+        """Create a parameter object from a tuple which was an argument
+           to a method to add a compartment, transmission, or transition
+           to this model.
+
+        Args:
+            param_tuple (tuple): tuple with 0-index being parameter name
+                and 1-index begin parameter value (np.array, int,
+                float)
+        Returns:
+        """
+        param_val = self._process_parameter_value(param_tuple[1])
+        return Parameter(param_tuple[0], param_val)
+
+    def _process_parameter_value(self, param_val):
+        """Check that the value of a parameter is either a single float
+           or an array with the same length as simulation length, and
+           throw an error if invalid. Otherwise, expand parameter to
+           array with same length and return.
+
+        Args:
+            param_val (np.array, float, or int): value to be expanded
+        Returns:
+            np.array: an array with the parameter value for each
+                timestep
+        """
+        if (not isinstance(param_val, float) and not isinstance(param_val, 
+                                                                int)) and \
+                len(param_val) != self.simulation_length:
+            raise ValueError("Parameter value must either be single float or "
+                             "int or np.array with length equal to model's "
+                             "simulation length.")
+        return self._expand_parameter_value(param_val)
+
+    def _expand_parameter_value(self, param_val):
+        """Expand a parameter to an np.array of length equal to this
+           model's simulation length. 
+        
+        Args:
+            param_val (np.array or float): parameter value to be
+                expanded
+        Returns:
+            np.array : an array with the parameter value for each
+                timestep.
+        """
+        if isinstance(param_val, float) or isinstance(param_val, int):
+            return np.zeros(self.total_time) + param_val
+        param_arr = np.expand_dims(param_val, 1)
+        return np.concatenate([param_arr for _ in range(self.intervals_per_day)],
+                              axis=1).reshape((self.total_time))
 
     def advance(self):
         """Advance the model simulation by one time-step."""
@@ -243,7 +297,6 @@ class CompartmentalModel:
         incidence = self.get_incidence()
         cumulative_metrics = {}
 
-        # TODO: Fix this!!
         for compt in incidence.keys():
             cumulative_ts = np.array([incidence[compt][:t].sum()
                 for t in range(len(incidence[compt]))])

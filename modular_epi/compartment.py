@@ -38,8 +38,8 @@ class DiseaseCompartment:
         self.values[0] = init_val
         self.transitions = transitions_list if transitions_list is not None \
             else []
-        self.self_parameter = Parameter("", 0) if self_param is None \
-            else self_param
+        self.self_parameter = Parameter("", (np.zeros(self.total_time))) if \
+            self_param is None else self_param
 
     def reset(self, length=None, iters=None):
         """Reset this DiseaseCompartment.
@@ -49,10 +49,8 @@ class DiseaseCompartment:
             iters (int): new simulation intervals per day,
                 if specified.
         """
-        if length is not None:
-            self.simulation_length = length
-        if iters is not None:
-            self.intervals_per_day = iters
+        if length is None: length = self.simulation_length
+        if iters is None: iters = self.intervals_per_day
         self.total_time = self.simulation_length * self.intervals_per_day
         self.values = np.zeros(self.total_time)
         self.t = 0
@@ -72,42 +70,14 @@ class DiseaseCompartment:
         Returns:
             Transition: created Transition object.
         """
+        if len(param.value) != self.total_time:
+            raise ValueError("Parameter value must be array with value "
+                             "with length == total_time")
         transition = Transition(self.simulation_length,
             self.intervals_per_day, compt=compt, param=param,
             name='{} -> {}'.format(self.name, compt.name))
         self.transitions.append(transition)
         return transition
-
-    #NOTE: These change_... methods should be obsolete when we can supply
-    #   a vector of parameters for each day. If decided that are not obsolte,
-    #   should get rid of for loops in bodies
-    def change_transition_parameter(self, compt, param_val,
-                                    param_name=None):
-        """Change the value (and potentially the name) of a parameter
-           for a given transition.
-
-        Args:
-            compt (DiseaseCompartment): the transition to change the
-                parameter for.
-            param_val (float): the rate at which to move in transition.
-        """
-        for transition in self.transitions:
-            if transition.compartment == compt:
-                transition.parameter.value = param_val
-                if param_name is not None:
-                    transition.parameter.name = param_name
-
-    def change_self_parameter(self, param_val, param_name=None):
-        """Change the value of the self parameter for this compartment.
-
-        Args:
-            param_val (float): the new value for the self parameter.
-            param_name (str): the new name for the self parameter,
-                if specified
-        """
-        name = self.self_parameter.name
-        if param_name is not None: name = param_name
-        self.self_parameter = Parameter(name, param_val)
 
     def iterate_time(self):
         """Iterate the model's time value for this compartment. Should be
@@ -129,8 +99,8 @@ class DiseaseCompartment:
             float: the number of individuals transitioning from this
                 compartment.
         """
-        transition_num = self.current_value * (transition.parameter.value
-            / self.intervals_per_day)
+        transition_num = self.current_value * (transition.parameter\
+            .value[self.t-1] / self.intervals_per_day)
         if not self.deterministic:
             transition_num = np.random.poisson(transition_num)
         return transition_num
@@ -144,8 +114,8 @@ class DiseaseCompartment:
             transition_val = self.calculate_transition(transition)
             self.add_value(-transition_val)
             transition.add_value(transition_val, self.t)
-        self.add_value(-self.current_value * (self.self_parameter.value
-            / self.intervals_per_day))
+        self.add_value(-self.current_value * (self.self_parameter\
+            .value[self.t-1] / self.intervals_per_day))
 
     def add_value(self, val):
         """Add a value to this compartment, typically if this compartment
@@ -219,6 +189,8 @@ class SusceptibleCompartment(DiseaseCompartment):
             iters (int): new intervals per day for simulation, if
                 specified.
         """
+        if length is None: length = self.simulation_length
+        if iters is None: iters = self.intervals_per_day
         super().reset(length=length, iters=iters)
         for transition_at_infection in self.transitions_at_infection:
             transition_at_infection.reset(length=length, iters=iters)
@@ -241,25 +213,7 @@ class SusceptibleCompartment(DiseaseCompartment):
         self.transmissions.append(transmission)
         return transmission
 
-    def change_transmission_parameter(self, compt, param_val,
-                                      param_name=None):
-        """Change the value of a parameter for a given infectious
-           compartment.
-
-        Args:
-            compt (DiseaseCompartment): the compartment to change the
-                transition parameter for.
-            param_val (float): the rate at which to move to compt.
-            param_name (str): the new name of the parameter, or none.
-        """
-        for transmission in self.transmissions:
-            if transmission.compartment == compt:
-                transmission.plarameter.value = param_val
-                if param_name is not None:
-                    transmission.parameter.name = param_name
-
-    def add_transition_at_infection(self, transition,
-                                    prop=Parameter("", 1)):
+    def add_transition_at_infection(self, transition, prop=None):
         """Add a special Transition to a compartment at infection.
 
         Args:
@@ -272,28 +226,15 @@ class SusceptibleCompartment(DiseaseCompartment):
             Transition: the created Transition object which represents
                 a transition at infection.
         """
+        if prop is None: prop = Parameter("", np.ones(self.total_time))
+        if len(prop.value) != self.total_time:
+            raise ValueError("Parameter value must be array with value "
+                             "with length == total_time")
         transition_at_infection = Transition(self.simulation_length,
             self.intervals_per_day, compt=transition, param=prop,
             name='{} => {}'.format(self.name, transition.name))
         self.transitions_at_infection.append(transition_at_infection)
         return transition_at_infection
-
-    def change_transition_at_infection_proportion(self, compt, prop_val,
-                                                  prop_name=None):
-        """Change the value of a parameter for a given compartment at
-           infection transition.
-
-        Args:
-            compt (DiseaseCompartment): the compartment to change the
-                transition parameter for.
-            prop_val (float): the rate at which to move to compt.
-            prop_name (str): the new name for the proportion parameter.
-        """
-        for transition_at_infection in self.transitions_at_infection:
-            if transition_at_infection.compartment == compt:
-                transition_at_infection.parameter.value = prop_val
-                if prop_name is not None:
-                    transition_at_infection.parameter.name = prop_name
 
     def calculate_infected(self, transmission):
         """Calculate the number infected via transmission Transmission.
@@ -306,7 +247,8 @@ class SusceptibleCompartment(DiseaseCompartment):
             float: the number of susceptibles infected by
                 this transmission in this timestep.
         """
-        infected = ((transmission.parameter.value / self.intervals_per_day)
+        infected = ((transmission.parameter.value[self.t-1] 
+                     / self.intervals_per_day)
             * self.current_value * transmission.current_value) / transmission.N
         if not self.deterministic: infected = np.random.poisson(infected)
         return infected
@@ -330,4 +272,4 @@ class SusceptibleCompartment(DiseaseCompartment):
         self.add_value(-sum_infected)
         for trans_at_infection in self.transitions_at_infection:
             trans_at_infection.add_value(sum_infected
-                * trans_at_infection.parameter.value, self.t)
+                * trans_at_infection.parameter.value[self.t-1], self.t)

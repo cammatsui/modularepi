@@ -5,6 +5,7 @@ todo.txt
 
 # Folders
 .vscode/
+env/
 modular_epi/__pycache__/
 modular_epi/consortium/
 modular_epi/main_SEIR.py

@@ -29,37 +29,29 @@ class TestCompartment(unittest.TestCase):
         self.R = DiseaseCompartment(
             "Recovered", length=self.length, iters=self.iters
         )
+
+        def make_param(name, val):
+            return Parameter(name, np.zeros(self.iters*self.length) + val)
+
+        beta_param = make_param('beta', self.beta)
+        gamma_param = make_param('gamma', self.gamma)
         self.S.add_transmission(
-            self.I, self.pop, Parameter("beta", self.beta)
+            self.I, self.pop, beta_param
         )
         self.S.add_transition_at_infection(self.I)
         self.I.add_transition(
-            self.R, Parameter("gamma", self.gamma)
+            self.R, gamma_param
         )
     
     def test_add_transition(self):
         # Test the transition from I to R
-        self.assertEqual(self.I.transitions[0].parameter.value, self.gamma)
+        self.assertEqual(self.I.transitions[0].parameter.value[0], self.gamma)
         self.assertEqual(self.I.transitions[0].parameter.name, "gamma")
         self.assertEqual(self.I.transitions[0].compartment, self.R)
         self.assertEqual(self.I.transitions[0].simulation_length,
                          self.length)
         self.assertEqual(self.I.transitions[0].intervals_per_day,
                          self.iters)
-    
-    def test_change_transition_parameter(self):
-        self.I.change_transition_parameter(self.R, 0.3,
-                                           param_name="sigma")
-        self.assertEqual(self.I.transitions[0].parameter.value, 0.3)
-        self.assertEqual(self.I.transitions[0].parameter.name, "sigma")
-        self.I.change_transition_parameter(self.R, 1.0,
-                                           param_name="gamma")
-
-    def test_change_self_parameter(self):
-        # Change self parameter: add death rate mu for S
-        self.S.change_self_parameter(1/1000, param_name = "mu")
-        self.assertEqual(self.S.self_parameter.name, "mu")
-        self.assertEqual(self.S.self_parameter.value, 1/1000)
     
     def test_calculate_transition(self):
         # Test I to R transition
@@ -97,9 +89,9 @@ class TestCompartment(unittest.TestCase):
         # Test that S is infected by I
         transmission = self.S.transmissions[0]
         self.assertEqual(
-            transmission.name, "Susceptible - beta -* Infectious"
+            transmission.name, "Susceptible *> Infectious"
         )
-        self.assertEqual(transmission.parameter.value, self.beta)
+        self.assertEqual(transmission.parameter.value[0], self.beta)
     
     # TODO: Fill out these tests!
     
@@ -109,7 +101,7 @@ class TestCompartment(unittest.TestCase):
     def test_add_transition_at_infection(self):
         # Test that I is transition at infection for S
         transition_at_infection = self.S.transitions_at_infection[0]
-        self.assertEqual(transition_at_infection.parameter.value, 1)
+        self.assertEqual(transition_at_infection.parameter.value[0], 1)
         self.assertEqual(
             transition_at_infection.name.split()[-1], "Infectious"
         )

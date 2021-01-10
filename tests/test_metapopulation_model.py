@@ -1,8 +1,8 @@
 import sys
 import matplotlib.pyplot as plt
 import os
-sys.path.append(os.getcwd() + '/../modular_epi')
-os.chdir('../modular_epi')
+sys.path.append(os.getcwd() + '/../modularepi')
+os.chdir('../modularepi')
 from transition import *
 from compartment import *
 from model import *

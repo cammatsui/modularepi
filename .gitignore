@@ -6,11 +6,11 @@ todo.txt
 # Folders
 .vscode/
 env/
-modular_epi/__pycache__/
-modular_epi/consortium/
-modular_epi/main_SEIR.py
-modular_epi/main_SIR.py
-modular_epi/main.py
+modularepi/__pycache__/
+modularepi/consortium/
+modularepi/main_SEIR.py
+modularepi/main_SIR.py
+modularepi/main.py
 
 # File extensions
 *.pyc

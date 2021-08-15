@@ -4,7 +4,7 @@
 
 import numpy as np
 
-from transition import Transition, Transmission, Parameter
+from .transition import Transition, Transmission, Parameter
 
 class DiseaseCompartment:
     """Superclass to define disease compartments in model."""

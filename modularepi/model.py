@@ -5,8 +5,8 @@ from collections import defaultdict
 
 import numpy as np
 
-from compartment import DiseaseCompartment, SusceptibleCompartment
-from transition import Parameter, Transition, Transmission
+from .compartment import DiseaseCompartment, SusceptibleCompartment
+from .transition import Parameter, Transition, Transmission
 
 class CompartmentalModel:
     """An object to contain compartments, parameters, and methods for a
@@ -339,27 +339,3 @@ class CompartmentalModel:
         """
         compt = self.compartments[name]
         return compt
-
-    def fit_transmission_parameter(self, compartment_name, timeseries,
-                                   timeseries_type='cumulative'):
-        """Fit the model's core transmission parameter to the
-           given timeseries.
-
-        Args:
-            compartment_name (str): the name of the compartment
-                to fit the data to.
-            timeseries (np.array): the data to fit the compartment
-                with name compartment_name to.
-            timeseries_type (str): 'cumulative', 'current', or
-                'incident', the type of timeseries to fit.
-
-        Returns:
-            float: the fitted value of the transmission parameter.
-        """
-        pass
-
-    def fit_self_parameter(self):
-        pass
-
-    def fit_parameter(self):
-        pass

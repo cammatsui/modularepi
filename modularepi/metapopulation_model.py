@@ -4,9 +4,9 @@
 
 import numpy as np
 
-from compartment import DiseaseCompartment, SusceptibleCompartment
-from transition import Parameter, Transition, Transmission
-from model import CompartmentalModel
+from .compartment import DiseaseCompartment, SusceptibleCompartment
+from .transition import Parameter, Transition, Transmission
+from .model import CompartmentalModel
 
 class MetapopulationModel(CompartmentalModel):
     """An object to contain a Metapopulation model."""
@@ -168,19 +168,19 @@ class MetapopulationModel(CompartmentalModel):
         # accounted for in matrix.
         infected_compt_names = self._get_numbered_names(infected_compt_name)
         infectious_compt_names = self._get_numbered_names(infectious_compt_name)
-        param_name, param_vals = baseline_transmission_param
+        param_name, param_val = baseline_transmission_param
         param_names = self._get_numbered_names(param_name)
         for i in range(self.c):
             for j in range(self.c):
                 if self.c == 1:
                     mat_val = mixing_matrix[0]
                 else:
-                    mat_val = mixing_matrix[i, j]
+                    mat_val = mixing_matrix[i][j]
                 super().add_transmission(
                     infected_compt_names[i],
                     infectious_compt_names[j],
                     Ns[j],
-                    (param_names[j], param_vals[j] * mat_val)
+                    (param_names[j], param_val * mat_val)
                 )
 
     def get_metrics(self, metric_type):

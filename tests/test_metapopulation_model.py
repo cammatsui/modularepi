@@ -82,8 +82,5 @@ class TestMetapopulationModel(unittest.TestCase):
             transitions.append(f"Infectious_{i} -> Recovered_{i}")
         self.assertEqual(transitions.sort(), model_transition_names.sort())
 
-            
-        
-
 if __name__ == '__main__':
     unittest.main()

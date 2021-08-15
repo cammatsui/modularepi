@@ -6,6 +6,7 @@ todo.txt
 # Folders
 .vscode/
 env/
+__pycache__/
 modularepi/__pycache__/
 modularepi/consortium/
 modularepi/main_SEIR.py

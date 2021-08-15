@@ -140,6 +140,9 @@ In a metapopulation model, we consider _c_ different metapopulations that follow
 The example code can be found in `seir_metapopulation_example.py`.
 
 ```python
+from modularepi.metapopulationmodel import MetapopulationModel
+from modularepi.ngm import NGM
+
 # For all arrays, index 0 is children, index 1 is adults.
 NUM_POPS = 2
 POP_SIZES = [200, 1000]
